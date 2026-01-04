@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>現場日本語 音声クイズ（危険注意）</title>
+
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  text-align: center;
+  padding: 20px;
+}
+
+h2 {
+  margin-bottom: 8px;
+}
+
+#counter {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #555;
+}
+
+#playBtn {
+  margin: 18px auto 22px;
+  min-width: 140px;
+  max-width: 60%;
+  padding: 16px;
+  font-size: 32px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+
+#choices button {
+  min-width: 200px;
+  max-width: 90%;
+  padding: 14px 18px;
+  margin: 10px auto;
+  font-size: 18px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background: #f0f0f0;
+  display: block;
+}
+
+button.correct {
+  background: #b6e7b9;
+  border-color: #2e7d32;
+  font-weight: bold;
+}
+
+button.wrong {
+  background: #f5b7b1;
+  border-color: #c62828;
+  font-weight: bold;
+}
+
+#nextBtn {
+  margin: 22px auto 0;
+  padding: 14px 20px;
+  font-size: 18px;
+  border-radius: 12px;
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🎧 音を聞いてえらんでね</h2>
+<p id="counter"></p>
+
+<audio id="audio" playsinline></audio>
+
+<button id="playBtn" onclick="playAudio()">▶︎</button>
+
+<div id="choices"></div>
+
+<button id="nextBtn" onclick="nextQuestion()">次の問題 ▶︎</button>
+
+<script>
+/*
+ group が同じものは
+ 同じ問題の選択肢に出ない
+*/
+
+const questionData = [
+  // 危険注意（3）
+  { audio: "abunai.m4a", text: "គ្រោះថ្នាក់!", group: "danger" },
+  { audio: "abunai.m4a", text: "ប្រយ័ត្ន!", group: "danger" },
+
+  { audio: "dame.m4a", text: "មិនបាន!", group: "no" },
+  { audio: "dame.m4a", text: "កុំ!", group: "no" },
+
+  { audio: "tomatte.m4a", text: "ឈប់!", group: "stop" },
+
+  // 動詞て形②（10）※仮セット・あとで差し替えOK
+  { audio: "mite.m4a", text: "សូម​មើល​ផង", group: "miru" },
+  { audio: "matte.m4a", text: "សូម​រង់ចាំ​ផង", group: "matsu" },
+  { audio: "suwatte.m4a", text: "សូម​អង្គុយ​ផង", group: "suwaru" },
+  { audio: "tatte.m4a", text: "សូម​ឈរ​ផង", group: "tatsu" },
+  { audio: "akete.m4a", text: "សូម​បើក​ផង", group: "akeru" },
+  { audio: "shimete.m4a", text: "សូម​បិទ​ផង", group: "shimeru" },
+  { audio: "yonde.m4a", text: "សូម​ហៅ​ផង", group: "yobu" },
+  { audio: "kaeshite.m4a", text: "សូម​ត្រឡប់​ផង", group: "kaesu" },
+  { audio: "tsukatte.m4a", text: "សូម​ប្រើ​ផង", group: "tsukau" },
+  { audio: "yamete.m4a", text: "សូម​បញ្ឈប់​ផង", group: "yameru" }
+];
+
+const totalQuestions = 13;
+let currentQuestion = 0;
+let correctCount = 0;
+let currentCorrectGroup = "";
+
+const audio = document.getElementById("audio");
+const choicesDiv = document.getElementById("choices");
+const nextBtn = document.getElementById("nextBtn");
+const counter = document.getElementById("counter");
+
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function playAudio() {
+  audio.currentTime = 0;
+  audio.load();
+  audio.play();
+}
+
+function loadQuestion() {
+  choicesDiv.innerHTML = "";
+  nextBtn.style.display = "none";
+
+  counter.textContent = `問題 ${currentQuestion + 1} / ${totalQuestions}`;
+
+  const correct =
+    questionData[Math.floor(Math.random() * questionData.length)];
+  currentCorrectGroup = correct.group;
+
+  audio.src = correct.audio;
+  audio.load();
+
+  const wrongs = shuffle(
+    questionData.filter(q => q.group !== currentCorrectGroup)
+  ).slice(0, 2);
+
+  const options = shuffle([correct, ...wrongs]);
+
+  options.forEach(option => {
+    const btn = document.createElement("button");
+    btn.textContent = option.text;
+    btn.onclick = () =>
+      checkAnswer(btn, option.group === currentCorrectGroup);
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function checkAnswer(button, isCorrect) {
+  const buttons = document.querySelectorAll("#choices button");
+  buttons.forEach(btn => (btn.disabled = true));
+
+  if (isCorrect) {
+    button.classList.add("correct");
+    button.textContent = "⭕️ " + button.textContent;
+    correctCount++;
+  } else {
+    button.classList.add("wrong");
+    button.textContent = "✖️ " + button.textContent;
+
+    buttons.forEach(btn => {
+      if (!btn.classList.contains("wrong")) {
+        btn.classList.add("correct");
+        btn.textContent = "⭕️ " + btn.textContent;
+      }
+    });
+  }
+
+  nextBtn.style.display = "block";
+}
+
+function nextQuestion() {
+  currentQuestion++;
+
+  if (currentQuestion >= totalQuestions) {
+    document.body.innerHTML = `
+      <h2>🎉 おつかれさま！</h2>
+      <p style="font-size:22px;">
+        ${totalQuestions}問中 <strong>${correctCount}</strong> 問 正解！
+      </p>
+    `;
+  } else {
+    loadQuestion();
+  }
+}
+
+loadQuestion();
+</script>
+
+</body>
+</html>

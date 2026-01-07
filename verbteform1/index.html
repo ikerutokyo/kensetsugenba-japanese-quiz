@@ -1,1 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>現場日本語 音声クイズ</title>
 
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  text-align: center;
+  padding: 20px;
+}
+
+h2 {
+  margin-bottom: 8px;
+}
+
+#counter {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #555;
+}
+
+/* ▶︎ 再生ボタン（白） */
+#playBtn {
+  margin: 18px auto 22px;
+  min-width: 140px;     /* 選択肢より少し細い */
+  max-width: 60%;
+  padding: 16px;
+  font-size: 32px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background: #ffffff; /* ← 白 */
+  display: block;
+  position: relative;
+  z-index: 10;
+}
+
+/* 選択肢エリア */
+#choices {
+  position: relative;
+  z-index: 1;
+}
+
+/* 選択肢ボタン（グレー） */
+#choices button {
+  min-width: 200px;
+  max-width: 90%;
+  padding: 14px 18px;
+  margin: 10px auto;
+  font-size: 18px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background: #f0f0f0;
+  display: block;
+  color: #000;
+}
+
+button.correct {
+  background: #b6e7b9;
+  border-color: #2e7d32;
+  font-weight: bold;
+}
+
+button.wrong {
+  background: #f5b7b1;
+  border-color: #c62828;
+  font-weight: bold;
+}
+
+/* 次の問題ボタン */
+#nextBtn {
+  margin: 22px auto 0;
+  padding: 14px 20px;
+  font-size: 18px;
+  border-radius: 12px;
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🎧 音を聞いてえらんでね</h2>
+<p id="counter"></p>
+
+<audio id="audio"></audio>
+
+<button id="playBtn" onclick="playAudio()">▶︎</button>
+
+<div id="choices"></div>
+
+<button id="nextBtn" onclick="nextQuestion()">次の問題 ▶︎</button>
+
+<script>
+const questionData = [
+  { audio: "kite.m4a", text: "សូម​មក​ផង" },
+  { audio: "itte.m4a", text: "សូម​ទៅ​ផង" },
+  { audio: "motte.m4a", text: "សូម​យក​ផង" },
+  { audio: "oite.m4a", text: "សូម​ដាក់​ផង" },
+  { audio: "tsukete.m4a", text: "សូម​ដាក់​ផង" },
+  { audio: "totte.m4a", text: "សូម​យក​ផង" },
+  { audio: "yatte.m4a", text: "សូម​ធ្វើ​ផង" },
+  { audio: "kakunin.m4a", text: "សូម​ពិនិត្យ​ផង" },
+  { audio: "check.m4a", text: "សូម​ត្រួតពិនិត្យ​ផង" },
+  { audio: "agatte.m4a", text: "សូម​ឡើង​ផង" },
+  { audio: "orite.m4a", text: "សូម​ចុះ" }
+];
+
+const totalQuestions = 20;
+let currentQuestion = 0;
+let correctCount = 0;
+let currentCorrectText = "";
+
+const audio = document.getElementById("audio");
+const choicesDiv = document.getElementById("choices");
+const nextBtn = document.getElementById("nextBtn");
+const counter = document.getElementById("counter");
+
+function shuffle(array) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function playAudio() {
+  audio.currentTime = 0;
+  audio.play();
+}
+
+function loadQuestion() {
+  choicesDiv.innerHTML = "";
+  nextBtn.style.display = "none";
+
+  counter.textContent = `問題 ${currentQuestion + 1} / ${totalQuestions}`;
+
+  const correct =
+    questionData[Math.floor(Math.random() * questionData.length)];
+  currentCorrectText = correct.text;
+
+  audio.src = correct.audio;
+  audio.load();
+
+  const wrongs = shuffle(
+    questionData.filter(q => q.text !== correct.text)
+  ).slice(0, 2);
+
+  const options = shuffle([correct, ...wrongs]);
+
+  options.forEach(option => {
+    const btn = document.createElement("button");
+    btn.textContent = option.text;
+    btn.onclick = () =>
+      checkAnswer(btn, option.text === currentCorrectText);
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function checkAnswer(button, isCorrect) {
+  const buttons = document.querySelectorAll("#choices button");
+  buttons.forEach(btn => (btn.disabled = true));
+
+  if (isCorrect) {
+    button.classList.add("correct");
+    button.textContent = "⭕️ " + button.textContent;
+    correctCount++;
+  } else {
+    button.classList.add("wrong");
+    button.textContent = "✖️ " + button.textContent;
+
+    buttons.forEach(btn => {
+      if (btn.textContent === currentCorrectText) {
+        btn.classList.add("correct");
+        btn.textContent = "⭕️ " + btn.textContent;
+      }
+    });
+  }
+
+  nextBtn.style.display = "block";
+}
+
+function nextQuestion() {
+  currentQuestion++;
+
+  if (currentQuestion >= totalQuestions) {
+    document.body.innerHTML = `
+      <h2>🎉 おつかれさま！</h2>
+      <p style="font-size:22px;">
+        ${totalQuestions}問中 <strong>${correctCount}</strong> 問 正解！
+      </p>
+    `;
+  } else {
+    loadQuestion();
+  }
+}
+
+loadQuestion();
+</script>
+
+</body>
+</html>

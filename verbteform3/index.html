@@ -1,1 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>現場日本語 音声クイズ③</title>
 
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  text-align: center;
+  padding: 20px;
+}
+
+h2 {
+  margin-bottom: 10px;
+}
+
+#counter {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #555;
+}
+
+/* ▶︎ 再生ボタン（て形①と同じ） */
+#playBtn {
+  margin: 20px auto 15px;
+  min-width: 220px;
+  max-width: 90%;
+  padding: 16px 18px;
+  font-size: 28px;
+  border-radius: 12px;
+  border: 1px solid #333;
+  background: #fff;
+  display: block;
+}
+
+/* 選択肢 */
+#choices button {
+  min-width: 220px;
+  max-width: 90%;
+  padding: 14px 18px;
+  margin: 10px auto;
+  font-size: 20px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  background: #f0f0f0;
+  display: block;
+  color: #000;
+}
+
+.hiragana {
+  display: block;
+  margin-top: 6px;
+  font-size: 20px;
+}
+
+#nextBtn {
+  margin: 20px auto 0;
+  padding: 14px 20px;
+  font-size: 18px;
+  border-radius: 12px;
+  display: none;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🎧 音を聞いてえらんでね</h2>
+<p id="counter"></p>
+
+<button id="playBtn">▶︎</button>
+<audio id="audio" preload="auto"></audio>
+
+<div id="choices"></div>
+
+<button id="nextBtn" onclick="nextQuestion()">次の問題 ▶︎</button>
+
+<script>
+const data = [
+  { audio:"haite.m4a",     text:"សូម​ពាក់​ផង",     hira:"はいて" },
+  { audio:"nuide.m4a",     text:"សូម​ដោះ​ផង",     hira:"ぬいで" },
+  { audio:"kabutte.m4a",   text:"សូម​ពាក់​ផง",     hira:"かぶって" },
+  { audio:"modotte.m4a",   text:"សូម​ត្រឡប់​ផង",  hira:"もどって" },
+  { audio:"hakonde.m4a",   text:"សូម​ដឹក​ផង",     hira:"はこんで" },
+  { audio:"narabete.m4a",  text:"សូម​តម្រៀប​ផង",  hira:"ならべて" },
+  { audio:"atsumete.m4a",  text:"សូម​ប្រមូល​ផង",  hira:"あつめて" },
+  { audio:"ugokashite.m4a",text:"សូម​ផ្លាស់ទី​ផង",hira:"うごかして" },
+  { audio:"tomete.m4a",    text:"សូម​បញ្ឈប់​ផង",  hira:"とめて" },
+  { audio:"akete.m4a",     text:"សូម​បើក​ផង",     hira:"あけて" }
+];
+
+const totalQuestions = 20;
+let currentQuestion = 0;
+let correctCount = 0;
+let correctItem = null;
+let answered = false;
+
+const audio = document.getElementById("audio");
+const playBtn = document.getElementById("playBtn");
+const choicesDiv = document.getElementById("choices");
+const counter = document.getElementById("counter");
+const nextBtn = document.getElementById("nextBtn");
+
+playBtn.onclick = () => {
+  audio.currentTime = 0;
+  audio.play();
+};
+
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+function loadQuestion() {
+  answered = false;
+  choicesDiv.innerHTML = "";
+  nextBtn.style.display = "none";
+
+  counter.textContent = `問題 ${currentQuestion + 1} / ${totalQuestions}`;
+
+  correctItem = data[Math.floor(Math.random() * data.length)];
+  audio.src = correctItem.audio;
+  audio.load();
+
+  const wrongs = shuffle(
+    data.filter(d => d.audio !== correctItem.audio)
+  ).slice(0, 2);
+
+  const options = shuffle([correctItem, ...wrongs]);
+
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.textContent = opt.text;
+    btn.dataset.audio = opt.audio;
+    btn.onclick = () => checkAnswer(opt);
+    choicesDiv.appendChild(btn);
+  });
+}
+
+function checkAnswer(selected) {
+  if (answered) return;
+  answered = true;
+
+  const buttons = document.querySelectorAll("#choices button");
+
+  buttons.forEach(b => {
+    const item = data.find(d => d.audio === b.dataset.audio);
+    if (item.audio === correctItem.audio) {
+      b.innerHTML =
+        "⭕️ " + item.text +
+        `<span class="hiragana">${item.hira}</span>`;
+    } else {
+      b.textContent = "✖️ " + b.textContent;
+    }
+  });
+
+  if (selected.audio === correctItem.audio) {
+    correctCount++;
+  }
+
+  nextBtn.style.display = "block";
+}
+
+function nextQuestion() {
+  currentQuestion++;
+  if (currentQuestion >= totalQuestions) {
+    document.body.innerHTML = `
+      <h2>🎉 おつかれさま！</h2>
+      <p style="font-size:22px;">
+        ${totalQuestions}問中 <strong>${correctCount}</strong> 問 正解！
+      </p>
+    `;
+  } else {
+    loadQuestion();
+  }
+}
+
+loadQuestion();
+</script>
+
+</body>
+</html>
